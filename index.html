@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>La Dolce Vita — 義大利餐廳</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F8F3EC;
+      --warm-white: #FDFAF6;
+      --gold: #C8A96E;
+      --gold-light: #E0C997;
+      --dark: #1A1208;
+      --brown: #3D2B1F;
+      --text: #2C1F14;
+      --muted: #7A6555;
+      --border: rgba(200,169,110,0.3);
+      --nav-h: 72px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--cream); }
+    ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+    /* ─── NAVBAR ─── */
+    nav {
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+      height: var(--nav-h);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
+      background: rgba(248,243,236,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: 0 4px 32px rgba(26,18,8,0.08); }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.55rem; font-weight: 600; letter-spacing: 0.04em;
+      color: var(--brown); cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-logo span { color: var(--gold); font-style: italic; }
+
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links li a {
+      font-size: 0.78rem; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--muted);
+      cursor: pointer; text-decoration: none;
+      position: relative; padding-bottom: 4px;
+      transition: color 0.25s;
+    }
+    .nav-links li a::after {
+      content: ''; position: absolute; bottom: 0; left: 0;
+      width: 0; height: 1px; background: var(--gold);
+      transition: width 0.3s ease;
+    }
+    .nav-links li a:hover, .nav-links li a.active { color: var(--brown); }
+    .nav-links li a:hover::after, .nav-links li a.active::after { width: 100%; }
+
+    .nav-reserve {
+      font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 10px 24px; border: 1px solid var(--gold);
+      color: var(--gold); background: transparent; cursor: pointer;
+      transition: all 0.3s; font-family: 'Jost', sans-serif; font-weight: 400;
+    }
+    .nav-reserve:hover { background: var(--gold); color: var(--cream); }
+
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 4px;
+    }
+    .hamburger span { display: block; width: 24px; height: 1px; background: var(--brown); transition: all 0.3s; }
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px,4px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px,-4px); }
+
+    .mobile-menu {
+      display: none; position: fixed; top: var(--nav-h); left: 0; width: 100%;
+      background: var(--warm-white); z-index: 999;
+      flex-direction: column; padding: 24px 32px 32px;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 12px 40px rgba(26,18,8,0.1);
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--muted); cursor: pointer; padding: 14px 0;
+      border-bottom: 1px solid var(--border); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .mobile-menu a:last-child { border-bottom: none; }
+    .mobile-menu a:hover, .mobile-menu a.active { color: var(--gold); }
+
+    /* ─── PAGE ─── */
+    #app { padding-top: var(--nav-h); min-height: 100vh; }
+
+    .page-fade-enter-active { animation: fadeSlideIn 0.55s ease forwards; }
+    .page-fade-leave-active { animation: fadeSlideOut 0.3s ease forwards; position: absolute; width: 100%; }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-12px); }
+    }
+
+    /* ─── UTILS ─── */
+    .section { padding: 96px 48px; }
+    .container { max-width: 1160px; margin: 0 auto; }
+    .section-tag {
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--gold); display: block; margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      font-weight: 300; line-height: 1.15; color: var(--brown);
+    }
+    .section-title em { font-style: italic; color: var(--gold); }
+    .divider { width: 60px; height: 1px; background: var(--gold); margin: 28px 0; }
+    .divider-center { margin: 28px auto; }
+
+    /* ─── HOME ─── */
+    .hero {
+      position: relative; height: calc(100vh - var(--nav-h));
+      min-height: 600px; overflow: hidden;
+      display: flex; align-items: center;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=80');
+      background-size: cover; background-position: center;
+      filter: brightness(0.55);
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(26,18,8,0.65) 0%, rgba(61,43,31,0.3) 60%, transparent 100%);
+    }
+    .hero-content { position: relative; z-index: 2; padding: 0 64px; max-width: 780px; }
+    .hero-eyebrow {
+      font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
+      color: var(--gold-light); margin-bottom: 22px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .hero-eyebrow::before {
+      content: ''; display: inline-block; width: 36px; height: 1px; background: var(--gold-light);
+    }
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 7vw, 6.5rem);
+      font-weight: 300; line-height: 1.05; color: #fff; margin-bottom: 10px;
+    }
+    .hero-title em { font-style: italic; color: var(--gold-light); }
+    .hero-subtitle {
+      font-size: 1rem; font-weight: 200; color: rgba(255,255,255,0.7);
+      letter-spacing: 0.08em; margin: 24px 0 42px; line-height: 1.7; max-width: 480px;
+    }
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    .btn-primary {
+      padding: 14px 36px; background: var(--gold); color: var(--dark);
+      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      font-family: 'Jost', sans-serif; font-weight: 500;
+      border: none; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); }
+    .btn-outline {
+      padding: 14px 36px; background: transparent;
+      border: 1px solid rgba(255,255,255,0.5); color: #fff;
+      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      font-family: 'Jost', sans-serif; font-weight: 400; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-outline:hover { border-color: var(--gold-light); color: var(--gold-light); }
+
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 2;
+    }
+    .hero-scroll span { font-size: 0.6rem; letter-spacing: 0.3em; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+    .scroll-line {
+      width: 1px; height: 48px; background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .features-strip {
+      background: var(--brown); padding: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+    }
+    .feature-item { padding: 48px; text-align: center; background: var(--brown); border-right: 1px solid rgba(255,255,255,0.07); }
+    .feature-item:last-child { border-right: none; }
+    .feature-icon { font-size: 1.6rem; margin-bottom: 14px; }
+    .feature-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem; color: var(--gold-light); font-weight: 400; margin-bottom: 10px;
+    }
+    .feature-desc { font-size: 0.8rem; color: rgba(255,255,255,0.45); line-height: 1.7; font-weight: 200; }
+
+    .home-about { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .about-img-wrap { position: relative; }
+    .about-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; }
+    .about-img-accent {
+      position: absolute; top: -20px; right: -20px; width: 65%; aspect-ratio: 1;
+      border: 1px solid var(--gold); z-index: -1;
+    }
+    .about-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem; font-style: italic; color: var(--gold);
+      line-height: 1.7; margin: 24px 0; padding-left: 20px;
+      border-left: 2px solid var(--gold);
+    }
+    .about-text { font-size: 0.9rem; line-height: 1.85; color: var(--muted); font-weight: 300; }
+
+    /* ─── MENU ─── */
+    .menu-hero {
+      height: 320px; position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding: 48px;
+    }
+    .menu-hero-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=80');
+      background-size: cover; background-position: center 40%;
+      filter: brightness(0.45);
+    }
+    .menu-hero-content { position: relative; z-index: 2; }
+    .menu-hero .section-tag { color: var(--gold-light); }
+    .menu-hero .section-title { color: #fff; }
+
+    .menu-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      margin-bottom: 56px; overflow-x: auto;
+    }
+    .menu-tab {
+      font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 16px 32px; cursor: pointer; white-space: nowrap;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.25s; background: none;
+      border-left: none; border-right: none; border-top: none;
+      font-family: 'Jost', sans-serif;
+    }
+    .menu-tab:hover { color: var(--brown); }
+    .menu-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2px; }
+    .menu-card {
+      background: var(--warm-white); padding: 32px;
+      border: 1px solid var(--border);
+      transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .menu-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(26,18,8,0.1); }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .menu-card-name { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 400; color: var(--brown); line-height: 1.25; }
+    .menu-card-price { font-size: 0.85rem; color: var(--gold); font-weight: 400; white-space: nowrap; }
+    .menu-card-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.7; font-weight: 300; }
+    .menu-card-tag {
+      display: inline-block; margin-top: 14px; font-size: 0.62rem; letter-spacing: 0.18em;
+      text-transform: uppercase; padding: 4px 12px; border: 1px solid var(--border); color: var(--muted);
+    }
+
+    /* ─── AMBIANCE ─── */
+    .ambiance-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-bottom: 80px; }
+    .ambiance-text { font-size: 0.9rem; line-height: 1.85; color: var(--muted); font-weight: 300; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .gallery-item { overflow: hidden; position: relative; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s ease; }
+    .gallery-item:hover img { transform: scale(1.04); }
+    .g1 { grid-column: span 7; grid-row: span 2; height: 520px; }
+    .g2 { grid-column: span 5; height: 250px; }
+    .g3 { grid-column: span 5; height: 250px; }
+    .g4 { grid-column: span 4; height: 300px; }
+    .g5 { grid-column: span 4; height: 300px; }
+    .g6 { grid-column: span 4; height: 300px; }
+
+    .gallery-caption {
+      position: absolute; bottom: 0; left: 0; width: 100%;
+      background: linear-gradient(to top, rgba(26,18,8,0.7), transparent);
+      padding: 32px 20px 18px;
+      font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.8); opacity: 0; transition: opacity 0.3s;
+    }
+    .gallery-item:hover .gallery-caption { opacity: 1; }
+
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 80px; }
+    .feat-card { padding: 36px; border: 1px solid var(--border); background: var(--warm-white); }
+    .feat-num { font-family: 'Cormorant Garamond', serif; font-size: 3rem; color: var(--border); line-height: 1; margin-bottom: 20px; }
+    .feat-card-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--brown); margin-bottom: 12px; font-weight: 400; }
+    .feat-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.75; font-weight: 300; }
+
+    /* ─── CONTACT ─── */
+    .contact-layout { display: grid; grid-template-columns: 1fr 1.3fr; gap: 80px; align-items: start; }
+    .contact-info-block { position: sticky; top: calc(var(--nav-h) + 40px); }
+    .info-item { margin-bottom: 36px; }
+    .info-label { font-size: 0.65rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; display: block; }
+    .info-value { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--brown); line-height: 1.5; }
+    .info-muted { font-size: 0.82rem; color: var(--muted); font-weight: 300; margin-top: 4px; }
+    .hours-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 6px; }
+    .hours-row { font-size: 0.8rem; color: var(--muted); font-weight: 300; padding: 3px 0; }
+    .hours-row span { color: var(--brown); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 14px 18px;
+      background: var(--warm-white); border: 1px solid var(--border);
+      font-family: 'Jost', sans-serif; font-size: 0.88rem; color: var(--text);
+      outline: none; transition: border-color 0.25s; -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-input::placeholder, .form-textarea::placeholder { color: rgba(200,169,110,0.5); }
+
+    .btn-submit {
+      width: 100%; padding: 16px; background: var(--brown);
+      color: var(--gold-light); font-family: 'Jost', sans-serif;
+      font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase;
+      border: none; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-submit:hover { background: var(--dark); }
+
+    .form-success {
+      padding: 20px 24px; border: 1px solid var(--gold);
+      background: rgba(200,169,110,0.06); margin-top: 16px;
+      font-size: 0.85rem; color: var(--brown); text-align: center; line-height: 1.7;
+      display: none;
+    }
+    .form-success.show { display: block; }
+
+    .map-placeholder {
+      width: 100%; height: 240px; background: var(--warm-white);
+      border: 1px solid var(--border); display: flex;
+      align-items: center; justify-content: center; margin-top: 40px;
+      position: relative; overflow: hidden;
+    }
+    .map-placeholder::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 40px);
+    }
+    .map-inner { position: relative; text-align: center; }
+    .map-pin { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .map-label { font-size: 0.75rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
+
+    /* ─── RESERVE ─── */
+    .reserve-layout { max-width: 680px; margin: 0 auto; text-align: center; }
+    .reserve-form { text-align: left; }
+    .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }
+    .time-slot {
+      padding: 10px; border: 1px solid var(--border); text-align: center;
+      font-size: 0.8rem; color: var(--muted); cursor: pointer; transition: all 0.2s; background: var(--warm-white);
+    }
+    .time-slot:hover, .time-slot.active { border-color: var(--gold); color: var(--gold); background: rgba(200,169,110,0.06); }
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--dark); padding: 72px 48px 32px; }
+    .footer-inner { max-width: 1160px; margin: 0 auto; }
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 64px; margin-bottom: 56px; }
+    .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: var(--cream); letter-spacing: 0.04em; margin-bottom: 16px; }
+    .footer-logo em { font-style: italic; color: var(--gold); }
+    .footer-tagline { font-size: 0.78rem; color: rgba(255,255,255,0.35); line-height: 1.7; font-weight: 200; max-width: 240px; }
+    .footer-col-title { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; display: block; }
+    .footer-links { list-style: none; }
+    .footer-links li { margin-bottom: 10px; }
+    .footer-links li a { font-size: 0.82rem; color: rgba(255,255,255,0.4); cursor: pointer; transition: color 0.2s; text-decoration: none; }
+    .footer-links li a:hover { color: var(--gold-light); }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 28px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-copy { font-size: 0.72rem; color: rgba(255,255,255,0.25); }
+    .footer-socials { display: flex; gap: 16px; }
+    .footer-social {
+      width: 36px; height: 36px; border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.3); font-size: 0.75rem; cursor: pointer; transition: all 0.3s;
+    }
+    .footer-social:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ─── RWD ─── */
+    @media (max-width: 1024px) {
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .home-about { grid-template-columns: 1fr; gap: 48px; }
+      .about-img-wrap { max-width: 520px; }
+      .ambiance-intro { grid-template-columns: 1fr; gap: 40px; }
+      .contact-layout { grid-template-columns: 1fr; gap: 56px; }
+      .contact-info-block { position: static; }
+      .gallery-grid { grid-template-columns: repeat(6, 1fr); }
+      .g1 { grid-column: span 6; height: 320px; grid-row: span 1; }
+      .g2,.g3 { grid-column: span 3; }
+      .g4,.g5,.g6 { grid-column: span 2; }
+    }
+    @media (max-width: 768px) {
+      :root { --nav-h: 64px; }
+      nav { padding: 0 24px; }
+      .nav-links, .nav-reserve { display: none; }
+      .hamburger { display: flex; }
+      .section { padding: 64px 24px; }
+      .hero-content { padding: 0 24px; }
+      .hero-title { font-size: clamp(2.5rem, 10vw, 4rem); }
+      .features-strip { grid-template-columns: 1fr; }
+      .feature-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
+      .feature-item:last-child { border-bottom: none; }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .form-row { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: 1fr 1fr; }
+      .g1,.g2,.g3,.g4,.g5,.g6 { grid-column: span 1; height: 220px; grid-row: span 1; }
+      .time-grid { grid-template-columns: repeat(3, 1fr); }
+      footer { padding: 48px 24px 24px; }
+      .footer-top { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 20px; }
+      .hours-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .hero-actions { flex-direction: column; }
+      .btn-primary, .btn-outline { text-align: center; width: 100%; }
+      .time-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- NAVBAR -->
+  <nav :class="{ scrolled: scrolled }">
+    <div class="nav-logo" @click="setPage('home')">
+      <span style="color:var(--gold)">✦</span>
+      La <span>Dolce</span> Vita
+    </div>
+    <ul class="nav-links">
+      <li><a :class="{ active: current==='home' }"      @click="setPage('home')">首頁</a></li>
+      <li><a :class="{ active: current==='menu' }"      @click="setPage('menu')">餐點介紹</a></li>
+      <li><a :class="{ active: current==='ambiance' }"  @click="setPage('ambiance')">餐廳環境</a></li>
+      <li><a :class="{ active: current==='contact' }"   @click="setPage('contact')">聯絡我們</a></li>
+      <li><a :class="{ active: current==='reserve' }"   @click="setPage('reserve')">訂位</a></li>
+    </ul>
+    <button class="nav-reserve" @click="setPage('reserve')">立即訂位</button>
+    <div class="hamburger" :class="{ open: menuOpen }" @click="menuOpen = !menuOpen">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" :class="{ open: menuOpen }">
+    <a :class="{ active: current==='home' }"     @click="setPage('home');menuOpen=false">首頁</a>
+    <a :class="{ active: current==='menu' }"     @click="setPage('menu');menuOpen=false">餐點介紹</a>
+    <a :class="{ active: current==='ambiance' }" @click="setPage('ambiance');menuOpen=false">餐廳環境</a>
+    <a :class="{ active: current==='contact' }"  @click="setPage('contact');menuOpen=false">聯絡我們</a>
+    <a :class="{ active: current==='reserve' }"  @click="setPage('reserve');menuOpen=false">立即訂位</a>
+  </div>
+
+  <transition name="page-fade" mode="out-in">
+
+    <!-- ════════════════════ HOME ════════════════════ -->
+    <div v-if="current === 'home'" key="home">
+      <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="hero-eyebrow">台南市 · 義大利料理</p>
+          <h1 class="hero-title">La <em>Dolce</em><br/>Vita</h1>
+          <p class="hero-subtitle">在義大利文中，「甜蜜的生活」不只是一句話，而是一種哲學——放慢節奏，品味每一口風味，感受每一刻美好。</p>
+          <div class="hero-actions">
+            <button class="btn-primary" @click="setPage('reserve')">立即訂位</button>
+            <button class="btn-outline" @click="setPage('menu')">瀏覽菜單</button>
+          </div>
+        </div>
+        <div class="hero-scroll">
+          <div class="scroll-line"></div>
+          <span>Scroll</span>
+        </div>
+      </section>
+
+      <div class="features-strip">
+        <div class="feature-item">
+          <div class="feature-icon">🍷</div>
+          <div class="feature-title">精選義大利酒窖</div>
+          <p class="feature-desc">超過 200 款義大利原裝進口葡萄酒，由侍酒師為您量身推薦完美搭配。</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">👨‍🍳</div>
+          <div class="feature-title">主廚 Marco 親自掌廚</div>
+          <p class="feature-desc">來自托斯卡尼的米其林一星經驗主廚，以在地食材重現最純粹的義大利滋味。</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🌿</div>
+          <div class="feature-title">季節性有機食材</div>
+          <p class="feature-desc">每日嚴選當季食材，與本地農場合作，給您最新鮮、最安心的餐桌體驗。</p>
+        </div>
+      </div>
+
+      <section class="section">
+        <div class="container">
+          <div class="home-about">
+            <div class="about-img-wrap">
+              <img class="about-img" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80" alt="餐廳內部"/>
+              <div class="about-img-accent"></div>
+            </div>
+            <div>
+              <span class="section-tag">我們的故事</span>
+              <h2 class="section-title">源自托斯卡尼的<br/><em>家傳滋味</em></h2>
+              <div class="divider"></div>
+              <blockquote class="about-quote">「料理是愛的語言，每一道菜都承載著家鄉的記憶與溫度。」<br/>— Marco Bianchi 主廚</blockquote>
+              <p class="about-text">2015 年，Marco 帶著義大利奶奶的食譜與米其林的精湛技藝，在台南落地生根。我們相信，一頓好的義大利料理，不只是填飽胃口，而是一場連結情感、文化與土地的感官之旅。從手工揉製的新鮮義大利麵，到柴燒窯烤的拿坡里披薩，每一道料理都是對義大利美食傳統的致敬，也是我們對台南這片土地最深的感謝。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="footer-inner">
+          <div class="footer-top">
+            <div>
+              <div class="footer-logo">La <em>Dolce</em> Vita</div>
+              <p class="footer-tagline">在台南，品味一場純粹的義大利甜蜜旅程。每一口，都是生命中最美好的時刻。</p>
+            </div>
+            <div>
+              <span class="footer-col-title">快速導覽</span>
+              <ul class="footer-links">
+                <li><a @click="setPage('home')">首頁</a></li>
+                <li><a @click="setPage('menu')">餐點介紹</a></li>
+                <li><a @click="setPage('ambiance')">餐廳環境</a></li>
+                <li><a @click="setPage('reserve')">立即訂位</a></li>
+              </ul>
+            </div>
+            <div>
+              <span class="footer-col-title">聯絡資訊</span>
+              <ul class="footer-links">
+                <li><a>台南市東區中華東路二段 88 號</a></li>
+                <li><a>+886 6 123 4567</a></li>
+                <li><a>info@ladolcevita.tw</a></li>
+              </ul>
+            </div>
+            <div>
+              <span class="footer-col-title">營業時間</span>
+              <ul class="footer-links">
+                <li><a>午餐 11:30 – 14:30</a></li>
+                <li><a>晚餐 17:30 – 22:00</a></li>
+                <li><a>週一公休</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <span class="footer-copy">© 2025 La Dolce Vita. All rights reserved.</span>
+            <div class="footer-socials">
+              <div class="footer-social">f</div>
+              <div class="footer-social">ig</div>
+              <div class="footer-social">yt</div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- ════════════════════ MENU ════════════════════ -->
+    <div v-else-if="current === 'menu'" key="menu">
+      <div class="menu-hero">
+        <div class="menu-hero-bg"></div>
+        <div class="menu-hero-content">
+          <span class="section-tag">La Cucina Italiana</span>
+          <h1 class="section-title" style="color:#fff">精選菜單</h1>
+        </div>
+      </div>
+      <section class="section">
+        <div class="container">
+          <div class="menu-tabs">
+            <button class="menu-tab" :class="{ active: menuTab==='pasta' }"  @click="menuTab='pasta'">義大利麵</button>
+            <button class="menu-tab" :class="{ active: menuTab==='gratin' }" @click="menuTab='gratin'">焗烤料理</button>
+            <button class="menu-tab" :class="{ active: menuTab==='pizza' }"  @click="menuTab='pizza'">拿坡里披薩</button>
+          </div>
+
+          <transition name="page-fade" mode="out-in">
+            <div class="menu-grid" :key="menuTab">
+              <div class="menu-card" v-for="item in currentMenuItems" :key="item.name">
+                <div class="menu-card-header">
+                  <span class="menu-card-name">{{ item.name }}</span>
+                  <span class="menu-card-price">NT$ {{ item.price }}</span>
+                </div>
+                <p class="menu-card-desc">{{ item.desc }}</p>
+                <span class="menu-card-tag">{{ item.tag }}</span>
+              </div>
+            </div>
+          </transition>
+        </div>
+      </section>
+      <footer><div class="footer-inner"><div class="footer-bottom"><span class="footer-copy">© 2025 La Dolce Vita.</span><div class="footer-socials"><div class="footer-social">f</div><div class="footer-social">ig</div></div></div></div></footer>
+    </div>
+
+    <!-- ════════════════════ AMBIANCE ════════════════════ -->
+    <div v-else-if="current === 'ambiance'" key="ambiance">
+      <section class="section">
+        <div class="container">
+          <div class="ambiance-intro">
+            <div>
+              <span class="section-tag">Il Nostro Spazio</span>
+              <h2 class="section-title">空間即是<br/><em>一道料理</em></h2>
+              <div class="divider"></div>
+              <p class="ambiance-text">當您踏入 La Dolce Vita，一切設計都是為了讓您感受義大利托斯卡尼的悠然氛圍。手工打磨的橄欖木桌椅、從佛羅倫斯進口的壁燈、以及牆上由義大利藝術家 Lorenzo Conti 親繪的濕壁畫，每一處細節都訴說著對義大利文化的深情。暖黃的燭光、輕柔的爵士樂、空氣中飄散的迷迭香與橄欖油香氣，讓您的每一次用餐都成為難以忘懷的美好記憶。</p>
+            </div>
+            <div>
+              <img src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&q=80" alt="餐廳環境" style="width:100%;height:440px;object-fit:cover;"/>
+            </div>
+          </div>
+
+          <div class="gallery-grid">
+            <div class="gallery-item g1"><img src="https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=900&q=80" alt="主廳"/><div class="gallery-caption">主廳全景</div></div>
+            <div class="gallery-item g2"><img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=80" alt="吧台"/><div class="gallery-caption">義式吧台</div></div>
+            <div class="gallery-item g3"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80" alt="桌景"/><div class="gallery-caption">精緻擺盤</div></div>
+            <div class="gallery-item g4"><img src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=500&q=80" alt="包廂"/><div class="gallery-caption">私密包廂</div></div>
+            <div class="gallery-item g5"><img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80" alt="露台"/><div class="gallery-caption">庭院露台</div></div>
+            <div class="gallery-item g6"><img src="https://images.unsplash.com/photo-1567521464027-f127ff144326?w=500&q=80" alt="酒窖"/><div class="gallery-caption">私人酒窖</div></div>
+          </div>
+
+          <div class="features-grid">
+            <div class="feat-card">
+              <div class="feat-num">01</div>
+              <div class="feat-card-title">托斯卡尼主廳</div>
+              <p class="feat-card-desc">挑高 5 公尺的主廳，以進口磚石與手工木作為主調，可容納 60 位賓客，並提供開放式廚房，讓您欣賞主廚烹調的每個精彩瞬間。</p>
+            </div>
+            <div class="feat-card">
+              <div class="feat-num">02</div>
+              <div class="feat-card-title">私密包廂空間</div>
+              <p class="feat-card-desc">3 個獨立包廂，每間可容納 6–12 人，適合商務宴請或私人慶典，可預約客製化菜單與花藝擺設服務。</p>
+            </div>
+            <div class="feat-card">
+              <div class="feat-num">03</div>
+              <div class="feat-card-title">庭院露天座位</div>
+              <p class="feat-card-desc">擁有義式庭園造景的露天區域，種植迷迭香、羅勒與橄欖樹，夜晚點起燭光，浪漫而靜謐，是情侶約會的首選。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer><div class="footer-inner"><div class="footer-bottom"><span class="footer-copy">© 2025 La Dolce Vita.</span><div class="footer-socials"><div class="footer-social">f</div><div class="footer-social">ig</div></div></div></div></footer>
+    </div>
+
+    <!-- ════════════════════ CONTACT ════════════════════ -->
+    <div v-else-if="current === 'contact'" key="contact">
+      <section class="section">
+        <div class="container">
+          <div style="margin-bottom:56px">
+            <span class="section-tag">Contattaci</span>
+            <h2 class="section-title">聯絡 <em>我們</em></h2>
+            <div class="divider"></div>
+          </div>
+          <div class="contact-layout">
+            <div class="contact-info-block">
+              <div class="info-item">
+                <span class="info-label">地址</span>
+                <div class="info-value">台南市東區中華東路二段 88 號</div>
+                <p class="info-muted">近台南火車站，提供停車場服務</p>
+              </div>
+              <div class="info-item">
+                <span class="info-label">電話</span>
+                <div class="info-value">+886 6 123 4567</div>
+                <p class="info-muted">訂位專線，歡迎來電</p>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Email</span>
+                <div class="info-value">info@ladolcevita.tw</div>
+                <p class="info-muted">一般詢問請以 Email 聯繫</p>
+              </div>
+              <div class="info-item">
+                <span class="info-label">營業時間</span>
+                <div class="hours-grid">
+                  <div class="hours-row"><span>週二 — 週五</span></div>
+                  <div class="hours-row">11:30 – 22:00</div>
+                  <div class="hours-row"><span>週六 — 週日</span></div>
+                  <div class="hours-row">10:30 – 22:30</div>
+                  <div class="hours-row"><span>週一</span></div>
+                  <div class="hours-row">公休</div>
+                </div>
+              </div>
+              <div class="map-placeholder">
+                <div class="map-inner">
+                  <span class="map-pin">📍</span>
+                  <span class="map-label">La Dolce Vita · 台南</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">姓名 *</label>
+                  <input class="form-input" v-model="form.name" type="text" placeholder="您的姓名"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">電話</label>
+                  <input class="form-input" v-model="form.phone" type="tel" placeholder="聯絡電話"/>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input class="form-input" v-model="form.email" type="email" placeholder="your@email.com"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">主旨</label>
+                <select class="form-select" v-model="form.subject">
+                  <option value="">請選擇詢問類型</option>
+                  <option>訂位詢問</option>
+                  <option>包廂預約</option>
+                  <option>商務合作</option>
+                  <option>媒體採訪</option>
+                  <option>其他</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">訊息內容 *</label>
+                <textarea class="form-textarea" v-model="form.message" placeholder="請描述您的需求或問題..."></textarea>
+              </div>
+              <button class="btn-submit" @click="submitForm">送出訊息</button>
+              <div class="form-success" :class="{ show: formSent }">
+                ✦ &nbsp; 感謝您的來信！我們將於 24 小時內與您聯繫。<br/>
+                <small style="color:var(--muted)">如有緊急需求，歡迎直接來電 +886 6 123 4567</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer><div class="footer-inner"><div class="footer-bottom"><span class="footer-copy">© 2025 La Dolce Vita.</span><div class="footer-socials"><div class="footer-social">f</div><div class="footer-social">ig</div></div></div></div></footer>
+    </div>
+
+    <!-- ════════════════════ RESERVE ════════════════════ -->
+    <div v-else-if="current === 'reserve'" key="reserve">
+      <section class="section">
+        <div class="container">
+          <div class="reserve-layout">
+            <span class="section-tag">Prenotazione</span>
+            <h2 class="section-title">預訂您的<br/><em>美好時光</em></h2>
+            <div class="divider divider-center"></div>
+            <p class="about-text" style="margin-bottom:48px">我們期待您的到來。每一張餐桌都是一個故事的開始，請讓我們為您打造一段難以忘懷的義大利夜晚。</p>
+
+            <div class="reserve-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">姓名 *</label>
+                  <input class="form-input" v-model="res.name" type="text" placeholder="訂位人姓名"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">電話 *</label>
+                  <input class="form-input" v-model="res.phone" type="tel" placeholder="聯絡電話"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">日期 *</label>
+                  <input class="form-input" v-model="res.date" type="date"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">用餐人數 *</label>
+                  <select class="form-select" v-model="res.guests">
+                    <option value="">請選擇</option>
+                    <option v-for="n in 10" :key="n">{{ n }} 位</option>
+                    <option>11 位以上（請來電）</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">用餐時段</label>
+                <div class="time-grid">
+                  <div class="time-slot" v-for="t in timeSlots" :key="t"
+                    :class="{ active: res.time === t }" @click="res.time = t">{{ t }}</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">特殊需求</label>
+                <textarea class="form-textarea" v-model="res.note" style="min-height:90px" placeholder="過敏食材、特殊座位需求、慶生佈置等..."></textarea>
+              </div>
+              <button class="btn-submit" @click="submitReservation">確認預訂</button>
+              <div class="form-success" :class="{ show: resSent }">
+                🍷 &nbsp; 預訂成功！我們將於 2 小時內以電話確認您的訂位。<br/>
+                <small style="color:var(--muted)">期待您的蒞臨，Benvenuti!</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer><div class="footer-inner"><div class="footer-bottom"><span class="footer-copy">© 2025 La Dolce Vita.</span><div class="footer-socials"><div class="footer-social">f</div><div class="footer-social">ig</div></div></div></div></footer>
+    </div>
+
+  </transition>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+createApp({
+  setup() {
+    const current  = ref('home');
+    const menuTab  = ref('pasta');
+    const menuOpen = ref(false);
+    const scrolled = ref(false);
+    const formSent = ref(false);
+    const resSent  = ref(false);
+
+    const form = ref({ name:'', phone:'', email:'', subject:'', message:'' });
+    const res  = ref({ name:'', phone:'', date:'', guests:'', time:'', note:'' });
+
+    const timeSlots = ['11:30','12:00','12:30','13:00','17:30','18:00','19:00','20:00','20:30','21:00','21:30'];
+
+    function setPage(p) {
+      current.value = p; menuOpen.value = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function handleScroll() { scrolled.value = window.scrollY > 30; }
+    onMounted(()  => window.addEventListener('scroll', handleScroll));
+    onUnmounted(()=> window.removeEventListener('scroll', handleScroll));
+
+    function submitForm() {
+      if (!form.value.name || !form.value.email || !form.value.message) { alert('請填寫姓名、Email 及訊息內容。'); return; }
+      formSent.value = true;
+      form.value = { name:'', phone:'', email:'', subject:'', message:'' };
+    }
+    function submitReservation() {
+      if (!res.value.name || !res.value.phone || !res.value.date || !res.value.guests) { alert('請填寫姓名、電話、日期及人數。'); return; }
+      resSent.value = true;
+      res.value = { name:'', phone:'', date:'', guests:'', time:'', note:'' };
+    }
+
+    const pasta = [
+      { name:'卡波納拉', price:'480', desc:'羅馬傳統秘方，以蛋黃、帕馬森起司與義大利培根精製，絲滑濃郁，每一口都是羅馬的陽光。', tag:'Signature' },
+      { name:'波隆那肉醬麵', price:'420', desc:'以托斯卡尼豬肉與牛肉慢燉 6 小時，搭配寬版義大利麵，是最溫暖的家傳滋味。', tag:'Classic' },
+      { name:'松露奶油義大利麵', price:'680', desc:'法國黑松露配合鮮奶油醬汁，頂部刨上帕馬森起司，奢華而芬芳，限量供應。', tag:'Premium' },
+      { name:'海鮮墨魚麵', price:'560', desc:'以墨魚汁染黑麵條，搭配鮮蛤、透抽與淡菜，佐以番茄白酒醬汁，海洋鮮味一次滿足。', tag:'Seafood' },
+      { name:'香蒜橄欖油細扁麵', price:'360', desc:'最純粹的義式精神，特級初榨橄欖油炒香大蒜與辣椒，以義大利細扁麵呈現，簡單即是美。', tag:'Vegan' },
+    ];
+    const gratin = [
+      { name:'焗烤海鮮飯', price:'520', desc:'以西班牙燉飯為基底，鋪上龍蝦、干貝與白蝦，撒滿莫札瑞拉起司烤至金黃，奶香四溢。', tag:'Seafood' },
+      { name:'焗烤茄子千層', price:'420', desc:'傳統義大利千層料理，以烤茄子取代麵皮，搭配番茄肉醬與貝夏美醬，素食者的最愛。', tag:'Vegetarian' },
+      { name:'帕馬森焗烤蘑菇', price:'380', desc:'精選波特菇鑲入義式香腸、帕馬森起司與新鮮香草，烤至起司融化起泡，香氣迷人。', tag:'Classic' },
+      { name:'焗烤龍蝦通心粉', price:'780', desc:'波士頓龍蝦螯肉與通心粉同烤，三種起司混合醬汁，是餐廳最具人氣的奢華料理。', tag:'Premium' },
+      { name:'蒜香焗烤馬鈴薯', price:'320', desc:'法式 Gratin Dauphinois 做法，薄切馬鈴薯以鮮奶油與大蒜慢烤，搭配烤蒜頭，暖心美味。', tag:'Side' },
+    ];
+    const pizza = [
+      { name:'瑪格麗特', price:'420', desc:'拿坡里 DOC 認證做法，番茄醬汁、新鮮水牛莫札瑞拉起司與羅勒葉，柴燒 90 秒出爐，正宗傳統。', tag:'Classic' },
+      { name:'松露白醬披薩', price:'680', desc:'以貝夏美白醬為底，淋上黑松露油，搭配水波蛋與帕馬森起司刨片，優雅奢華的週末選擇。', tag:'Premium' },
+      { name:'義式臘腸披薩', price:'480', desc:'特選義大利薩拉米臘腸與卡拉布里亞辣椒，搭配番茄醬與起司，辣中帶甜，層次豐富。', tag:'Spicy' },
+      { name:'煙燻鮭魚薄底披薩', price:'560', desc:'薄脆餅皮塗抹酸奶油，疊上挪威冷燻鮭魚、酸豆與紅洋蔥，以新鮮蒔蘿點綴，清新不膩。', tag:'Seafood' },
+      { name:'四季披薩', price:'500', desc:'以四個象限分區，分別呈現香菇、朝鮮薊、火腿與橄欖四種食材，一次體驗義大利四季風味。', tag:'Classic' },
+    ];
+
+    const menuData = { pasta, gratin, pizza };
+    const currentMenuItems = computed(() => menuData[menuTab.value] || []);
+
+    return {
+      current, menuTab, menuOpen, scrolled, formSent, resSent,
+      form, res, timeSlots, setPage, submitForm, submitReservation,
+      currentMenuItems
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
